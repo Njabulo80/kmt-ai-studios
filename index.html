@@ -8,8 +8,7 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-  <meta name="theme-color"
-        content="#080808">
+  <meta name="theme-color" content="#080808">
 
   <meta name="description"
         content="KMT AI Studios empowers creators to build digital avatars, explore AI voices and create intelligent video experiences.">
@@ -20,24 +19,19 @@
   <meta name="application-name"
         content="KMT AI Studios">
 
-  <meta name="mobile-web-app-capable"
-        content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
 
-  <meta name="apple-mobile-web-app-capable"
-        content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <meta name="apple-mobile-web-app-status-bar-style"
         content="black-translucent">
 
   <title>KMT AI Studios | Create Without Limits</title>
 
-  <!-- Application Styles -->
   <link rel="stylesheet" href="./styles.css">
 
-  <!-- PWA Manifest -->
   <link rel="manifest" href="./manifest.json">
 
-  <!-- Application Icon -->
   <link rel="icon"
         href="./icon.svg"
         type="image/svg+xml">
@@ -47,32 +41,38 @@
 <body>
 
   <!-- NOTIFICATION AREA -->
+
   <div id="notification"
        class="notification"
        role="status"
        aria-live="polite"></div>
 
+
   <!-- NAVIGATION -->
+
   <header class="navbar">
 
     <a href="#home"
        class="logo"
        aria-label="KMT AI Studios Home">
+
       KMT<span> AI</span>
+
     </a>
 
     <button
       class="menu-btn"
       id="menuBtn"
+      type="button"
       aria-label="Open navigation menu"
       aria-expanded="false"
-      aria-controls="navigation"
-      type="button">
+      aria-controls="navigation">
+
       ☰
+
     </button>
 
-    <nav id="navigation"
-         aria-label="Main navigation">
+    <nav id="navigation" aria-label="Main navigation">
 
       <a href="#home">Home</a>
 
@@ -82,18 +82,20 @@
 
       <a href="#about">About</a>
 
-      <a href="#studio" class="nav-cta">
-        Get Started
-      </a>
+      <a href="#studio" class="nav-cta">Get Started</a>
 
     </nav>
 
   </header>
 
+
   <!-- MAIN APPLICATION -->
+
   <main>
 
+
     <!-- HERO SECTION -->
+
     <section class="hero" id="home">
 
       <div class="hero-content">
@@ -109,20 +111,28 @@
         </h1>
 
         <p class="hero-text">
+
           Transform ideas into intelligent digital
           experiences. Create AI avatars, generate
           videos and bring your imagination to life.
+
         </p>
 
-        <a href="#studio" class="primary-btn">
+        <button
+          type="button"
+          class="primary-btn"
+          onclick="launchStudio('avatar')">
+
           Enter KMT Studio →
-        </a>
+
+        </button>
 
         <p class="founder">
           An innovation by Njabulo Mbhodziya Dlamini
         </p>
 
       </div>
+
 
       <div class="hero-visual"
            aria-label="KMT Intelligence visual identity">
@@ -141,7 +151,9 @@
 
     </section>
 
+
     <!-- FEATURES SECTION -->
+
     <section class="features" id="features">
 
       <p class="eyebrow">
@@ -166,6 +178,7 @@
 
         </article>
 
+
         <article class="feature-card">
 
           <span aria-hidden="true">♫</span>
@@ -178,6 +191,7 @@
 
         </article>
 
+
         <article class="feature-card">
 
           <span aria-hidden="true">▶</span>
@@ -189,6 +203,7 @@
           </p>
 
         </article>
+
 
         <article class="feature-card">
 
@@ -206,7 +221,9 @@
 
     </section>
 
+
     <!-- CREATIVE WORKSPACE -->
+
     <section class="studio" id="studio">
 
       <p class="eyebrow">
@@ -221,37 +238,57 @@
         Everything begins with an idea.
       </p>
 
+
       <div class="studio-panel">
 
         <h3>Start creating</h3>
+
 
         <div class="studio-actions">
 
           <button
             type="button"
+            id="avatarButton"
             onclick="openStudio('avatar')">
+
             Create Avatar
+
           </button>
+
 
           <button
             type="button"
+            id="videoButton"
             onclick="openStudio('video')">
+
             Create Video
+
           </button>
+
 
           <button
             type="button"
+            id="voiceButton"
             onclick="openStudio('voice')">
+
             Explore Voices
+
           </button>
 
         </div>
 
-        <div id="workspace"
-             aria-live="polite">
+
+        <!-- DYNAMIC WORKSPACE -->
+
+        <div
+          id="workspace"
+          tabindex="-1"
+          aria-live="polite"
+          aria-label="KMT creative workspace">
 
           <p>
-            Select a creative tool to begin.
+            Welcome to your creative workspace.
+            Select a tool above to begin.
           </p>
 
         </div>
@@ -262,7 +299,9 @@
 
   </main>
 
+
   <!-- FOOTER -->
+
   <footer id="about">
 
     <h2>KMT AI STUDIOS</h2>
@@ -282,8 +321,32 @@
 
   </footer>
 
+
   <!-- APPLICATION ENGINE -->
+
   <script src="./app.js" defer></script>
+
+
+  <!-- STUDIO LAUNCHER -->
+
+  <script>
+
+    function launchStudio(type) {
+
+      const studio = document.getElementById("studio");
+
+      if (!studio) return;
+
+      studio.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+      openStudio(type);
+
+    }
+
+  </script>
 
 </body>
 
