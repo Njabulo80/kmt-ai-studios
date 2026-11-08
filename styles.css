@@ -1,20 +1,20 @@
 
-/* =====================================
+/* =========================================
    KMT AI STUDIOS
    PREMIUM DESIGN SYSTEM
    Founder: Njabulo Mbhodziya Dlamini
-===================================== */
+========================================= */
 
 :root {
   --black: #080808;
   --dark: #101010;
   --panel: #171717;
-  --panel-light: #202020;
   --gold: #d6ad55;
   --light-gold: #f0d58c;
   --white: #ffffff;
   --muted: #a5a5a5;
-  --border: #303030;
+  --border: #353535;
+  --danger: #e46b6b;
 }
 
 * {
@@ -25,7 +25,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 85px;
+  scroll-padding-top: 90px;
 }
 
 body {
@@ -33,7 +33,6 @@ body {
   color: var(--white);
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
-  overflow-x: hidden;
 }
 
 a {
@@ -41,30 +40,14 @@ a {
   color: inherit;
 }
 
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
 button {
+  font-family: inherit;
   cursor: pointer;
 }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--light-gold);
-  outline-offset: 4px;
-}
-
-
-/* =====================================
+/* =========================================
    NAVIGATION
-===================================== */
+========================================= */
 
 .navbar {
   min-height: 80px;
@@ -77,7 +60,6 @@ select:focus-visible {
   position: sticky;
   top: 0;
   z-index: 1000;
-  backdrop-filter: blur(12px);
 }
 
 .logo {
@@ -121,10 +103,9 @@ select:focus-visible {
   font-size: 25px;
 }
 
-
-/* =====================================
+/* =========================================
    HERO SECTION
-===================================== */
+========================================= */
 
 .hero {
   min-height: 650px;
@@ -133,7 +114,6 @@ select:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 40px;
-
   background:
     radial-gradient(
       ellipse at 80% 50%,
@@ -177,10 +157,8 @@ select:focus-visible {
   background: var(--gold);
   color: var(--black);
   padding: 15px 28px;
-  font-size: 16px;
   font-weight: bold;
-  border: 1px solid var(--gold);
-  border-radius: 5px;
+  border-radius: 4px;
   transition: 0.3s;
 }
 
@@ -195,10 +173,9 @@ select:focus-visible {
   color: #777;
 }
 
-
-/* =====================================
+/* =========================================
    HERO VISUAL
-===================================== */
+========================================= */
 
 .hero-visual {
   width: 320px;
@@ -242,10 +219,9 @@ select:focus-visible {
   letter-spacing: 4px;
 }
 
-
-/* =====================================
+/* =========================================
    FEATURES
-===================================== */
+========================================= */
 
 .features {
   padding: 100px 8%;
@@ -295,21 +271,13 @@ select:focus-visible {
   font-size: 13px;
 }
 
-
-/* =====================================
-   STUDIO SECTION
-===================================== */
+/* =========================================
+   STUDIO
+========================================= */
 
 .studio {
   padding: 100px 8%;
   text-align: center;
-
-  /* Prevent sticky navigation from covering headings. */
-  scroll-margin-top: 90px;
-}
-
-.studio > p:not(.eyebrow) {
-  color: var(--muted);
 }
 
 .studio-panel {
@@ -318,8 +286,7 @@ select:focus-visible {
   padding: 35px;
   background: var(--panel);
   border: 1px solid rgba(214, 173, 85, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
 }
 
 .studio-panel h3 {
@@ -335,14 +302,12 @@ select:focus-visible {
 }
 
 .studio-actions button {
-  min-height: 52px;
   padding: 13px 22px;
   background: transparent;
   color: var(--gold);
   border: 1px solid var(--gold);
-  border-radius: 6px;
-  font-size: 16px;
-  transition: 0.25s;
+  border-radius: 5px;
+  transition: 0.3s;
 }
 
 .studio-actions button:hover {
@@ -350,114 +315,51 @@ select:focus-visible {
   color: var(--black);
 }
 
-.studio-actions button:active {
-  transform: scale(0.98);
-}
-
-
-/* =====================================
-   DYNAMIC WORKSPACE
-===================================== */
+/* =========================================
+   WORKSPACE
+========================================= */
 
 #workspace {
   margin-top: 30px;
-  padding: 30px;
-  background: #111111;
-  border: 1px solid #353535;
+  padding: 25px;
+  border: 1px dashed #555;
   color: var(--muted);
-  border-radius: 10px;
-  text-align: left;
-  min-height: 120px;
-  scroll-margin-top: 95px;
+  border-radius: 6px;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 #workspace h3 {
   color: var(--white);
-  font-size: 25px;
-  margin-bottom: 15px;
-  line-height: 1.3;
+  font-size: clamp(21px, 4vw, 30px);
+  margin-bottom: 20px;
 }
 
-#workspace p {
+#workspace > p {
   margin-bottom: 15px;
-  line-height: 1.7;
 }
 
 #workspace .status {
-  color: var(--gold);
-  font-size: 14px;
-  margin-top: 20px;
-  padding: 14px;
-  background: rgba(214, 173, 85, 0.07);
-  border-left: 3px solid var(--gold);
-  border-radius: 4px;
+  color: var(--muted);
+  margin-top: 18px;
+  line-height: 1.8;
 }
 
-
-/* =====================================
-   AVATAR UPLOAD
-===================================== */
-
-#avatarUpload {
-  display: block;
-  width: 100%;
-  margin: 22px 0;
-  padding: 15px;
-  color: var(--white);
-  background: var(--panel-light);
-  border: 1px dashed var(--gold);
-  border-radius: 7px;
-  font-size: 14px;
-}
-
-#avatarUpload::file-selector-button {
-  background: var(--gold);
-  color: var(--black);
-  border: none;
-  padding: 10px 14px;
-  margin-right: 12px;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-#avatarPreview {
-  margin-top: 20px;
-  text-align: center;
-}
-
-#avatarPreview img {
-  display: block;
-  max-width: 100%;
-  margin: 15px auto;
-  border: 2px solid var(--gold);
-  border-radius: 12px;
-  object-fit: cover;
-}
-
-#avatarPreview p {
-  color: var(--light-gold);
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-
-/* =====================================
-   VIDEO AND VOICE INPUTS
-===================================== */
+/* =========================================
+   FORM LABELS AND INPUTS
+========================================= */
 
 #workspace label {
   display: block;
+  text-align: left;
   color: var(--light-gold);
-  font-size: 14px;
   font-weight: bold;
   margin: 18px 0 8px;
 }
 
+#workspace input:not([type="file"]),
 #workspace textarea,
-#workspace select,
-#workspace input:not([type="file"]) {
-  display: block;
+#workspace select {
   width: 100%;
   padding: 14px;
   background: var(--black);
@@ -465,67 +367,196 @@ select:focus-visible {
   border: 1px solid #494949;
   border-radius: 6px;
   font-size: 15px;
-  margin: 8px 0 18px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+#workspace input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 18px 0;
+  background: var(--black);
+  color: var(--muted);
+  border: 1px dashed var(--gold);
+  border-radius: 6px;
 }
 
 #workspace textarea {
   resize: vertical;
-  min-height: 140px;
-  line-height: 1.6;
+  min-height: 130px;
 }
 
 #workspace select {
   cursor: pointer;
 }
 
-#workspace select option {
-  background: var(--dark);
-  color: var(--white);
+#workspace input:focus,
+#workspace textarea:focus,
+#workspace select:focus {
+  outline: 1px solid var(--gold);
+  border-color: var(--gold);
 }
 
+/* =========================================
+   WORKSPACE BUTTONS
+========================================= */
+
 #workspace button {
-  display: inline-block;
+  padding: 13px 22px;
   background: var(--gold);
   color: var(--black);
   border: 1px solid var(--gold);
   border-radius: 5px;
-  padding: 13px 22px;
   font-size: 15px;
   font-weight: bold;
-  transition: 0.25s;
+  transition: 0.3s;
 }
 
 #workspace button:hover {
   background: var(--light-gold);
 }
 
+#workspace button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-/* =====================================
+/* =========================================
+   AVATAR IMAGE PREVIEW
+========================================= */
+
+#avatarPreview img {
+  display: block;
+  width: 180px;
+  height: 180px;
+  max-width: 100%;
+  object-fit: cover;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  margin: 20px auto;
+}
+
+#avatarPreview p {
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================
+   AVATAR IDENTITY MANAGER
+========================================= */
+
+.avatar-form {
+  width: 100%;
+}
+
+.avatar-form label,
+.avatar-library label {
+  display: block;
+  text-align: left;
+  color: var(--light-gold);
+  font-weight: bold;
+  margin: 18px 0 8px;
+}
+
+.avatar-form input,
+.avatar-form textarea,
+.avatar-form select {
+  width: 100%;
+  padding: 14px;
+  background: var(--black);
+  color: var(--white);
+  border: 1px solid #494949;
+  border-radius: 6px;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.avatar-form textarea {
+  resize: vertical;
+}
+
+.avatar-form input[type="file"] {
+  border: 1px dashed var(--gold);
+  background: var(--panel);
+}
+
+.avatar-form button {
+  width: 100%;
+  margin-top: 15px;
+}
+
+/* =========================================
+   SAVED AVATAR LIBRARY
+========================================= */
+
+.avatar-library {
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid #383838;
+}
+
+.avatar-library h3 {
+  color: var(--gold);
+  font-size: 20px;
+}
+
+.avatar-library-card {
+  margin-top: 18px;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid #393939;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.avatar-library-card h4 {
+  color: var(--white);
+  font-size: 18px;
+}
+
+.avatar-library-card p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 8px 0 14px;
+}
+
+.avatar-library-card button {
+  margin: 5px 8px 5px 0;
+}
+
+.avatar-library-card .delete-avatar-button {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* =========================================
    NOTIFICATIONS
-===================================== */
+========================================= */
 
 .notification {
   display: none;
   position: fixed;
   top: 90px;
   right: 20px;
-  z-index: 2000;
-  max-width: 320px;
-  padding: 14px 18px;
-  color: var(--black);
-  background: var(--gold);
+  max-width: 90%;
+  padding: 14px 20px;
+  background: var(--panel);
+  color: var(--light-gold);
+  border: 1px solid var(--gold);
   border-radius: 6px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  z-index: 2000;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
 }
 
 .notification.show {
   display: block;
 }
 
-
-/* =====================================
+/* =========================================
    FOOTER
-===================================== */
+========================================= */
 
 footer {
   padding: 50px 8%;
@@ -545,52 +576,15 @@ footer p {
   margin-top: 8px;
 }
 
-
-/* =====================================
-   TABLET RESPONSIVENESS
-===================================== */
-
-@media (max-width: 1000px) {
-
-  .hero {
-    padding: 85px 7%;
-  }
-
-  .hero-visual {
-    width: 260px;
-    height: 260px;
-  }
-
-  .orbit {
-    width: 220px;
-    height: 220px;
-  }
-
-  .feature-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-}
-
-
-/* =====================================
+/* =========================================
    MOBILE RESPONSIVENESS
-===================================== */
+========================================= */
 
 @media (max-width: 768px) {
 
-  html {
-    scroll-padding-top: 80px;
-  }
-
   .navbar {
     padding: 0 6%;
-    height: 70px;
     min-height: 70px;
-  }
-
-  .logo {
-    font-size: 25px;
   }
 
   .menu-btn {
@@ -622,7 +616,6 @@ footer p {
   }
 
   .hero h1 {
-    font-size: clamp(42px, 11vw, 65px);
     letter-spacing: -2px;
   }
 
@@ -640,25 +633,17 @@ footer p {
     height: 230px;
   }
 
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
   .features,
   .studio {
     padding: 75px 7%;
   }
 
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .studio {
-    scroll-margin-top: 80px;
-  }
-
   .studio-panel {
     padding: 22px 15px;
-  }
-
-  .studio-panel h3 {
-    font-size: 22px;
   }
 
   .studio-actions {
@@ -671,44 +656,46 @@ footer p {
 
   #workspace {
     padding: 20px 14px;
-    scroll-margin-top: 80px;
   }
 
-  #workspace h3 {
-    font-size: 22px;
-    overflow-wrap: anywhere;
+  #workspace button {
+    width: 100%;
+  }
+
+  .avatar-library-card button {
+    width: 100%;
+    margin: 6px 0;
   }
 
   .notification {
-    left: 15px;
-    right: 15px;
-    max-width: none;
+    left: 5%;
+    right: 5%;
+    max-width: 90%;
   }
-
 }
 
+/* =========================================
+   ACCESSIBILITY AND MOTION
+========================================= */
 
-/* =====================================
-   SMALL PHONE SCREENS
-===================================== */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--light-gold);
+  outline-offset: 3px;
+}
 
-@media (max-width: 380px) {
-
-  .logo {
-    font-size: 22px;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 
-  .eyebrow {
-    letter-spacing: 2px;
-    font-size: 10px;
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
-
-  .studio-panel {
-    padding: 18px 12px;
-  }
-
-  #workspace {
-    padding: 16px 10px;
-  }
-
 }
