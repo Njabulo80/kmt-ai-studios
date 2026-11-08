@@ -1,5 +1,11 @@
 
-const CACHE_NAME = "kmt-ai-studios-v1";
+/* =====================================
+   KMT AI STUDIOS
+   SERVICE WORKER
+   Offline Application Engine
+===================================== */
+
+const CACHE_NAME = "kmt-ai-studios-v2";
 
 const APP_FILES = [
   "./",
@@ -10,20 +16,50 @@ const APP_FILES = [
   "./icon.svg"
 ];
 
-// INSTALL APPLICATION CACHE
+
+/* =====================================
+   1. INSTALL APPLICATION CACHE
+===================================== */
 
 self.addEventListener("install", event => {
 
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_FILES))
+
+    caches.open(CACHE_NAME).then(async cache => {
+
+      // Cache available application files individually.
+      // A missing file will not stop the entire installation.
+
+      await Promise.all(
+
+        APP_FILES.map(async file => {
+
+          try {
+
+            await cache.add(file);
+
+          } catch (error) {
+
+            console.warn("Could not cache:", file, error);
+
+          }
+
+        })
+
+      );
+
+    })
+
   );
 
   self.skipWaiting();
 
 });
 
-// ACTIVATE NEW VERSION
+
+/* =====================================
+   2. ACTIVATE NEW VERSION
+===================================== */
 
 self.addEventListener("activate", event => {
 
@@ -34,57 +70,130 @@ self.addEventListener("activate", event => {
       Promise.all(
 
         keys
-          .filter(key => key !== CACHE_NAME)
+
+          .filter(key =>
+
+            key.startsWith("kmt-ai-studios-") &&
+            key !== CACHE_NAME
+
+          )
+
           .map(key => caches.delete(key))
 
       )
 
-    )
+    ).then(() => self.clients.claim())
 
   );
 
-  self.clients.claim();
-
 });
 
-// HANDLE NETWORK REQUESTS
+
+/* =====================================
+   3. HANDLE NETWORK REQUESTS
+===================================== */
 
 self.addEventListener("fetch", event => {
 
-  if (event.request.method !== "GET") return;
+  const request = event.request;
 
-  const url = new URL(event.request.url);
+  // Only handle GET requests.
+
+  if (request.method !== "GET") return;
+
+
+  const url = new URL(request.url);
+
+  // Ignore requests from external websites.
 
   if (url.origin !== self.location.origin) return;
 
+
+  // Handle page navigation.
+
+  if (request.mode === "navigate") {
+
+    event.respondWith(
+
+      fetch(request)
+
+        .then(response => {
+
+          if (response.ok) {
+
+            const copy = response.clone();
+
+            caches.open(CACHE_NAME).then(cache => {
+
+              cache.put("./index.html", copy);
+
+            });
+
+          }
+
+          return response;
+
+        })
+
+        .catch(async () => {
+
+          return await caches.match("./index.html") ||
+
+            new Response(
+
+              "KMT AI Studios is currently offline. Please reconnect to the internet.",
+
+              {
+                status: 503,
+                headers: {
+                  "Content-Type": "text/plain"
+                }
+              }
+
+            );
+
+        })
+
+    );
+
+    return;
+
+  }
+
+
+  // Handle other application files.
+
   event.respondWith(
 
-    caches.match(event.request).then(cached => {
+    caches.match(request).then(cachedResponse => {
 
-      if (cached) return cached;
+      if (cachedResponse) {
 
-      return fetch(event.request).then(response => {
+        return cachedResponse;
+
+      }
+
+
+      return fetch(request).then(response => {
 
         if (
+
           response.ok &&
           response.type === "basic"
+
         ) {
 
           const copy = response.clone();
 
           caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, copy);
+
+            cache.put(request, copy);
+
           });
 
         }
 
         return response;
-
-      }).catch(() => {
-
-        if (event.request.mode === "navigate") {
-          return caches.match("./index.html");
-        }
 
       });
 
@@ -93,3 +202,11 @@ self.addEventListener("fetch", event => {
   );
 
 });
+
+
+/* =====================================
+   4. APPLICATION CACHE COMPLETE
+===================================== */
+
+console.log("KMT AI Studios service worker active.");
+
