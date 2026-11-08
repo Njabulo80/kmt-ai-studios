@@ -1,110 +1,290 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080808">
-  <meta name="description" content="KMT AI Studios - Create your digital world.">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color"
+        content="#080808">
+
+  <meta name="description"
+        content="KMT AI Studios empowers creators to build digital avatars, explore AI voices and create intelligent video experiences.">
+
+  <meta name="author"
+        content="Njabulo Mbhodziya Dlamini">
+
+  <meta name="application-name"
+        content="KMT AI Studios">
+
+  <meta name="mobile-web-app-capable"
+        content="yes">
+
+  <meta name="apple-mobile-web-app-capable"
+        content="yes">
+
+  <meta name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent">
+
   <title>KMT AI Studios | Create Without Limits</title>
-  <link rel="stylesheet" href="styles.css">
+
+  <!-- Application Styles -->
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Application Icon -->
+  <link rel="icon"
+        href="./icon.svg"
+        type="image/svg+xml">
+
 </head>
 
 <body>
 
-  <header class="navbar">
-    <a href="#" class="logo">KMT<span> AI</span></a>
-    <button class="menu-btn" id="menuBtn">☰</button>
+  <!-- NOTIFICATION AREA -->
+  <div id="notification"
+       class="notification"
+       role="status"
+       aria-live="polite"></div>
 
-    <nav id="navigation">
+  <!-- NAVIGATION -->
+  <header class="navbar">
+
+    <a href="#home"
+       class="logo"
+       aria-label="KMT AI Studios Home">
+      KMT<span> AI</span>
+    </a>
+
+    <button
+      class="menu-btn"
+      id="menuBtn"
+      aria-label="Open navigation menu"
+      aria-expanded="false"
+      aria-controls="navigation"
+      type="button">
+      ☰
+    </button>
+
+    <nav id="navigation"
+         aria-label="Main navigation">
+
       <a href="#home">Home</a>
+
       <a href="#features">Features</a>
+
       <a href="#studio">Studio</a>
+
       <a href="#about">About</a>
-      <a href="#studio" class="nav-cta">Get Started</a>
+
+      <a href="#studio" class="nav-cta">
+        Get Started
+      </a>
+
     </nav>
+
   </header>
 
+  <!-- MAIN APPLICATION -->
   <main>
+
+    <!-- HERO SECTION -->
     <section class="hero" id="home">
+
       <div class="hero-content">
-        <p class="eyebrow">THE FUTURE OF DIGITAL CREATIVITY</p>
-        <h1>CREATE BEYOND<br><span>LIMITS.</span></h1>
-        <p class="hero-text">
-          Transform ideas into intelligent digital experiences.
-          Create AI avatars, generate videos and bring your
-          imagination to life.
+
+        <p class="eyebrow">
+          THE FUTURE OF DIGITAL CREATIVITY
         </p>
 
-        <a href="#studio" class="primary-btn">Enter KMT Studio →</a>
-        <p class="founder">An innovation by Njabulo Mbhodziya Dlamini</p>
+        <h1>
+          CREATE BEYOND
+          <br>
+          <span>LIMITS.</span>
+        </h1>
+
+        <p class="hero-text">
+          Transform ideas into intelligent digital
+          experiences. Create AI avatars, generate
+          videos and bring your imagination to life.
+        </p>
+
+        <a href="#studio" class="primary-btn">
+          Enter KMT Studio →
+        </a>
+
+        <p class="founder">
+          An innovation by Njabulo Mbhodziya Dlamini
+        </p>
+
       </div>
 
-      <div class="hero-visual">
+      <div class="hero-visual"
+           aria-label="KMT Intelligence visual identity">
+
         <div class="orbit">
+
           <div class="eye">◉</div>
-          <div class="orbit-text">KMT INTELLIGENCE</div>
+
+          <div class="orbit-text">
+            KMT INTELLIGENCE
+          </div>
+
         </div>
+
       </div>
+
     </section>
 
+    <!-- FEATURES SECTION -->
     <section class="features" id="features">
-      <p class="eyebrow">ONE PLATFORM. MANY POSSIBILITIES.</p>
-      <h2>Your creative intelligence studio.</h2>
+
+      <p class="eyebrow">
+        ONE PLATFORM. MANY POSSIBILITIES.
+      </p>
+
+      <h2>
+        Your creative intelligence studio.
+      </h2>
 
       <div class="feature-grid">
+
         <article class="feature-card">
-          <span>◈</span>
+
+          <span aria-hidden="true">◈</span>
+
           <h3>AI Avatars</h3>
-          <p>Create and manage your digital identity.</p>
+
+          <p>
+            Create and manage your digital identity.
+          </p>
+
         </article>
 
         <article class="feature-card">
-          <span>♫</span>
+
+          <span aria-hidden="true">♫</span>
+
           <h3>AI Voices</h3>
-          <p>Explore intelligent voice experiences.</p>
+
+          <p>
+            Explore intelligent voice experiences.
+          </p>
+
         </article>
 
         <article class="feature-card">
-          <span>▶</span>
+
+          <span aria-hidden="true">▶</span>
+
           <h3>Video Studio</h3>
-          <p>Turn written scripts into video concepts.</p>
+
+          <p>
+            Turn written scripts into video experiences.
+          </p>
+
         </article>
 
         <article class="feature-card">
-          <span>✧</span>
+
+          <span aria-hidden="true">✧</span>
+
           <h3>AI Creativity</h3>
-          <p>Build, experiment and express your ideas.</p>
+
+          <p>
+            Build, experiment and express your ideas.
+          </p>
+
         </article>
+
       </div>
+
     </section>
 
+    <!-- CREATIVE WORKSPACE -->
     <section class="studio" id="studio">
-      <p class="eyebrow">YOUR CREATIVE WORKSPACE</p>
-      <h2>Welcome to KMT Studio.</h2>
-      <p>Everything begins with an idea.</p>
+
+      <p class="eyebrow">
+        YOUR CREATIVE WORKSPACE
+      </p>
+
+      <h2>
+        Welcome to KMT Studio.
+      </h2>
+
+      <p>
+        Everything begins with an idea.
+      </p>
 
       <div class="studio-panel">
+
         <h3>Start creating</h3>
+
         <div class="studio-actions">
-          <button onclick="openStudio('avatar')">Create Avatar</button>
-          <button onclick="openStudio('video')">Create Video</button>
-          <button onclick="openStudio('voice')">Explore Voices</button>
+
+          <button
+            type="button"
+            onclick="openStudio('avatar')">
+            Create Avatar
+          </button>
+
+          <button
+            type="button"
+            onclick="openStudio('video')">
+            Create Video
+          </button>
+
+          <button
+            type="button"
+            onclick="openStudio('voice')">
+            Explore Voices
+          </button>
+
         </div>
 
-        <div id="workspace">
-          <p>Select a creative tool to begin.</p>
+        <div id="workspace"
+             aria-live="polite">
+
+          <p>
+            Select a creative tool to begin.
+          </p>
+
         </div>
+
       </div>
+
     </section>
+
   </main>
 
+  <!-- FOOTER -->
   <footer id="about">
+
     <h2>KMT AI STUDIOS</h2>
-    <p>Technology. Creativity. Possibility.</p>
-    <p>© 2026 KMT AI Studios. All rights reserved.</p>
+
+    <p>
+      Technology. Creativity. Possibility.
+    </p>
+
+    <p>
+      Founded by Njabulo Mbhodziya Dlamini.
+    </p>
+
+    <p>
+      © <span id="currentYear">2026</span>
+      KMT AI Studios. All rights reserved.
+    </p>
+
   </footer>
 
-  <script src="app.js"></script>
+  <!-- APPLICATION ENGINE -->
+  <script src="./app.js" defer></script>
+
 </body>
+
 </html>
