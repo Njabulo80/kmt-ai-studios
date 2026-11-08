@@ -7,7 +7,20 @@
 
 
 /* =====================================
-   1. MOBILE NAVIGATION
+   1. APPLICATION SETTINGS
+===================================== */
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const DATABASE_NAME = "KMT_AI_STUDIOS";
+const DATABASE_VERSION = 1;
+const STORE_NAME = "avatars";
+
+let currentAvatarURL = null;
+let selectedAvatarFile = null;
+
+
+/* =====================================
+   2. MOBILE NAVIGATION
 ===================================== */
 
 const menuBtn = document.getElementById("menuBtn");
@@ -46,7 +59,7 @@ if (menuBtn && navigation) {
 
 
 /* =====================================
-   2. COPYRIGHT YEAR
+   3. COPYRIGHT YEAR
 ===================================== */
 
 const yearElement = document.getElementById("currentYear");
@@ -57,23 +70,168 @@ if (yearElement) {
 
 
 /* =====================================
-   3. IMAGE PREVIEW MANAGEMENT
+   4. DATABASE CONNECTION
 ===================================== */
 
-let currentAvatarURL = null;
+function openAvatarDatabase() {
+
+  return new Promise((resolve, reject) => {
+
+    if (!("indexedDB" in window)) {
+      reject(new Error("Browser storage is unavailable."));
+      return;
+    }
+
+    const request = indexedDB.open(
+      DATABASE_NAME,
+      DATABASE_VERSION
+    );
+
+    request.onupgradeneeded = event => {
+
+      const database = event.target.result;
+
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+
+        database.createObjectStore(STORE_NAME, {
+          keyPath: "id"
+        });
+
+      }
+
+    };
+
+    request.onsuccess = () => resolve(request.result);
+
+    request.onerror = () => reject(request.error);
+
+  });
+
+}
 
 
 /* =====================================
-   4. STUDIO WORKSPACE
+   5. DATABASE OPERATIONS
 ===================================== */
 
-function openStudio(type) {
+async function saveAvatarRecord(avatar) {
 
-  const workspace = document.getElementById("workspace");
+  const database = await openAvatarDatabase();
 
-  if (!workspace) return;
+  return new Promise((resolve, reject) => {
 
-  // Clean up an earlier image preview.
+    const transaction = database.transaction(
+      STORE_NAME,
+      "readwrite"
+    );
+
+    transaction.objectStore(STORE_NAME).put(avatar);
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve(true);
+    };
+
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+
+    transaction.onabort = () => {
+      database.close();
+      reject(transaction.error || new Error("Save cancelled."));
+    };
+
+  });
+
+}
+
+
+async function getAllAvatars() {
+
+  const database = await openAvatarDatabase();
+
+  return new Promise((resolve, reject) => {
+
+    const transaction = database.transaction(
+      STORE_NAME,
+      "readonly"
+    );
+
+    const request = transaction.objectStore(STORE_NAME).getAll();
+
+    request.onsuccess = () => resolve(request.result || []);
+
+    request.onerror = () => reject(request.error);
+
+    transaction.oncomplete = () => database.close();
+
+    transaction.onerror = () => database.close();
+
+  });
+
+}
+
+
+async function getAvatarById(id) {
+
+  const database = await openAvatarDatabase();
+
+  return new Promise((resolve, reject) => {
+
+    const transaction = database.transaction(
+      STORE_NAME,
+      "readonly"
+    );
+
+    const request = transaction.objectStore(STORE_NAME).get(id);
+
+    request.onsuccess = () => resolve(request.result || null);
+
+    request.onerror = () => reject(request.error);
+
+    transaction.oncomplete = () => database.close();
+
+    transaction.onerror = () => database.close();
+
+  });
+
+}
+
+
+async function deleteAvatarRecord(id) {
+
+  const database = await openAvatarDatabase();
+
+  return new Promise((resolve, reject) => {
+
+    const transaction = database.transaction(
+      STORE_NAME,
+      "readwrite"
+    );
+
+    transaction.objectStore(STORE_NAME).delete(id);
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve(true);
+    };
+
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+
+  });
+
+}
+
+
+/* =====================================
+   6. IMAGE PREVIEW MANAGEMENT
+===================================== */
+
+function clearAvatarPreview() {
 
   if (currentAvatarURL) {
 
@@ -83,129 +241,580 @@ function openStudio(type) {
 
   }
 
+}
 
-  /* ---------------------------------
-     AI AVATAR STUDIO
-  --------------------------------- */
 
-  if (type === "avatar") {
+function showAvatarPreview(file) {
 
-    workspace.innerHTML = `
+  const preview = document.getElementById("avatarPreview");
 
-      <h3>CREATE YOUR AI AVATAR</h3>
+  if (!preview) return;
 
-      <p>
-        Upload a photograph to begin creating
-        your digital identity.
-      </p>
+  clearAvatarPreview();
+
+  currentAvatarURL = URL.createObjectURL(file);
+
+  const image = document.createElement("img");
+
+  image.src = currentAvatarURL;
+
+  image.alt = "Avatar photograph preview";
+
+  const fileName = document.createElement("p");
+
+  fileName.textContent = file.name;
+
+  preview.replaceChildren(image, fileName);
+
+}
+
+
+/* =====================================
+   7. AVATAR STUDIO
+===================================== */
+
+async function openAvatarStudio(workspace) {
+
+  selectedAvatarFile = null;
+
+  workspace.innerHTML = `
+
+    <h3>KMT AI AVATAR CREATOR</h3>
+
+    <p>
+      Create an identity for your digital avatar.
+    </p>
+
+    <div class="avatar-form">
+
+      <label for="avatarName">
+        Avatar name
+      </label>
+
+      <input
+        type="text"
+        id="avatarName"
+        placeholder="Example: Njabulo Professional"
+        maxlength="60"
+      >
+
+      <label for="avatarDescription">
+        Avatar description
+      </label>
+
+      <textarea
+        id="avatarDescription"
+        placeholder="Describe your avatar..."
+        rows="3"
+        maxlength="500"
+      ></textarea>
+
+      <label for="avatarUpload">
+        Upload photograph
+      </label>
 
       <input
         type="file"
         id="avatarUpload"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
       >
 
       <div id="avatarPreview"></div>
 
-      <p class="status">
+      <label for="avatarStyle">
+        Presentation style
+      </label>
 
-        Avatar workspace ready.
+      <select id="avatarStyle">
 
-        AI avatar generation will be connected
-        through a secure AI engine.
+        <option value="Professional">Professional</option>
 
+        <option value="Casual">Casual</option>
+
+        <option value="Corporate">Corporate</option>
+
+        <option value="Creative">Creative</option>
+
+        <option value="Educational">Educational</option>
+
+      </select>
+
+      <label for="avatarVoice">
+        Preferred voice
+      </label>
+
+      <select id="avatarVoice">
+
+        <option value="Natural male voice">
+          Natural male voice
+        </option>
+
+        <option value="Natural female voice">
+          Natural female voice
+        </option>
+
+        <option value="Professional narration">
+          Professional narration
+        </option>
+
+        <option value="Energetic presentation">
+          Energetic presentation
+        </option>
+
+      </select>
+
+      <button type="button" id="saveAvatarBtn">
+        Save avatar
+      </button>
+
+      <p id="avatarStatus" class="status">
+        Your avatar creation workspace is ready.
       </p>
 
-    `;
+    </div>
 
-    const upload = document.getElementById("avatarUpload");
+    <div class="avatar-library">
 
-    upload.addEventListener("change", function(event) {
+      <h3>MY AVATAR LIBRARY</h3>
 
-      const file = event.target.files[0];
+      <p>
+        Your saved avatars will appear here.
+      </p>
 
-      if (!file) return;
+      <div id="avatarLibraryList"></div>
 
+    </div>
 
-      // Check image format.
-
-      if (!file.type.startsWith("image/")) {
-
-        alert("Please select a valid image.");
-
-        upload.value = "";
-
-        return;
-
-      }
+  `;
 
 
-      // Check image size.
+  const upload = document.getElementById("avatarUpload");
 
-      if (file.size > 10 * 1024 * 1024) {
+  const saveButton = document.getElementById("saveAvatarBtn");
 
-        alert("Please select an image smaller than 10MB.");
+  upload.addEventListener("change", event => {
 
-        upload.value = "";
+    const file = event.target.files[0];
 
-        return;
+    if (!file) return;
 
-      }
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ];
 
+    if (!allowedTypes.includes(file.type)) {
 
-      const preview = document.getElementById("avatarPreview");
+      showNotification("Please upload a JPG, PNG or WebP image.");
 
-      if (!preview) return;
+      upload.value = "";
 
+      selectedAvatarFile = null;
 
-      // Remove previous preview URL.
+      return;
 
-      if (currentAvatarURL) {
+    }
 
-        URL.revokeObjectURL(currentAvatarURL);
+    if (file.size > MAX_IMAGE_SIZE) {
 
-      }
+      showNotification("Please choose an image smaller than 10MB.");
 
+      upload.value = "";
 
-      currentAvatarURL = URL.createObjectURL(file);
+      selectedAvatarFile = null;
 
+      return;
 
-      // Create image safely.
+    }
 
-      const image = document.createElement("img");
+    selectedAvatarFile = file;
 
-      image.src = currentAvatarURL;
+    showAvatarPreview(file);
 
-      image.alt = "Uploaded avatar preview";
+    document.getElementById("avatarStatus").textContent =
+      "Photograph uploaded. Complete your avatar profile.";
 
-      image.style.width = "160px";
-
-      image.style.height = "160px";
-
-      image.style.objectFit = "cover";
-
-      image.style.borderRadius = "12px";
-
-      image.style.marginTop = "20px";
-
-      image.style.border = "2px solid #d6ad55";
-
-
-      const fileName = document.createElement("p");
-
-      fileName.textContent = file.name;
+  });
 
 
-      preview.replaceChildren(image, fileName);
+  saveButton.addEventListener("click", saveCurrentAvatar);
+
+  await renderAvatarLibrary();
+
+}
+
+
+/* =====================================
+   8. SAVE AVATAR PROFILE
+===================================== */
+
+async function saveCurrentAvatar() {
+
+  const name = document.getElementById("avatarName");
+
+  const description = document.getElementById("avatarDescription");
+
+  const style = document.getElementById("avatarStyle");
+
+  const voice = document.getElementById("avatarVoice");
+
+  const status = document.getElementById("avatarStatus");
+
+
+  if (!name || !description || !style || !voice || !status) {
+    return;
+  }
+
+  const avatarName = name.value.trim();
+
+  if (!avatarName) {
+
+    status.textContent = "Please give your avatar a name.";
+
+    name.focus();
+
+    return;
+
+  }
+
+  if (!selectedAvatarFile) {
+
+    status.textContent = "Please upload a photograph first.";
+
+    return;
+
+  }
+
+  const saveButton = document.getElementById("saveAvatarBtn");
+
+  saveButton.disabled = true;
+
+  saveButton.textContent = "Saving...";
+
+
+  const avatar = {
+
+    id: (
+      window.crypto &&
+      typeof window.crypto.randomUUID === "function"
+    )
+      ? window.crypto.randomUUID()
+      : Date.now().toString() + Math.random().toString(16).slice(2),
+
+    name: avatarName,
+
+    description: description.value.trim(),
+
+    style: style.value,
+
+    voice: voice.value,
+
+    image: selectedAvatarFile,
+
+    createdAt: new Date().toISOString()
+
+  };
+
+
+  try {
+
+    await saveAvatarRecord(avatar);
+
+    status.textContent =
+      "Avatar profile saved successfully!";
+
+    showNotification("Your avatar has been saved.");
+
+    selectedAvatarFile = null;
+
+    document.getElementById("avatarUpload").value = "";
+
+    await renderAvatarLibrary();
+
+  }
+
+  catch (error) {
+
+    console.error("Avatar save error:", error);
+
+    status.textContent =
+      "Unable to save. Please check your browser storage.";
+
+  }
+
+  finally {
+
+    saveButton.disabled = false;
+
+    saveButton.textContent = "Save avatar";
+
+  }
+
+}
+
+
+/* =====================================
+   9. DISPLAY SAVED AVATARS
+===================================== */
+
+async function renderAvatarLibrary() {
+
+  const library = document.getElementById("avatarLibraryList");
+
+  if (!library) return;
+
+  try {
+
+    const avatars = await getAllAvatars();
+
+    library.replaceChildren();
+
+    if (avatars.length === 0) {
+
+      const emptyMessage = document.createElement("p");
+
+      emptyMessage.textContent =
+        "No saved avatars yet. Create your first avatar above.";
+
+      library.appendChild(emptyMessage);
+
+      return;
+
+    }
+
+    avatars.sort((a, b) =>
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    avatars.forEach(avatar => {
+
+      const card = document.createElement("div");
+
+      card.className = "avatar-library-card";
+
+
+      const title = document.createElement("h4");
+
+      title.textContent = avatar.name;
+
+
+      const details = document.createElement("p");
+
+      details.textContent =
+        avatar.style + " · " + avatar.voice;
+
+
+      const openButton = document.createElement("button");
+
+      openButton.type = "button";
+
+      openButton.textContent = "Open avatar";
+
+      openButton.addEventListener("click", () => {
+        loadSavedAvatar(avatar.id);
+      });
+
+
+      const deleteButton = document.createElement("button");
+
+      deleteButton.type = "button";
+
+      deleteButton.textContent = "Delete";
+
+      deleteButton.className = "delete-avatar-button";
+
+      deleteButton.addEventListener("click", () => {
+        removeSavedAvatar(avatar.id);
+      });
+
+
+      card.append(title, details, openButton, deleteButton);
+
+      library.appendChild(card);
 
     });
 
   }
 
+  catch (error) {
 
-  /* ---------------------------------
-     VIDEO STUDIO
-  --------------------------------- */
+    console.error("Avatar library error:", error);
+
+    library.textContent =
+      "Unable to load your avatar library.";
+
+  }
+
+}
+
+
+/* =====================================
+   10. OPEN SAVED AVATAR
+===================================== */
+
+async function loadSavedAvatar(id) {
+
+  try {
+
+    const avatar = await getAvatarById(id);
+
+    if (!avatar) {
+
+      showNotification("Avatar could not be found.");
+
+      return;
+
+    }
+
+    selectedAvatarFile = null;
+
+    clearAvatarPreview();
+
+    const workspace = document.getElementById("workspace");
+
+    if (!workspace) return;
+
+    workspace.innerHTML = `
+
+      <h3>AVATAR PROFILE</h3>
+
+      <div id="savedAvatarPreview"></div>
+
+      <label>Avatar name</label>
+
+      <p id="savedAvatarName"></p>
+
+      <label>Description</label>
+
+      <p id="savedAvatarDescription"></p>
+
+      <label>Presentation style</label>
+
+      <p id="savedAvatarStyle"></p>
+
+      <label>Preferred voice</label>
+
+      <p id="savedAvatarVoice"></p>
+
+      <button type="button" id="backToAvatarStudio">
+        Back to avatar creator
+      </button>
+
+      <p class="status">
+        This avatar profile is saved on this device.
+        AI animation and voice generation are not yet connected.
+      </p>
+
+    `;
+
+
+    const preview = document.getElementById("savedAvatarPreview");
+
+    const imageURL = URL.createObjectURL(avatar.image);
+
+    currentAvatarURL = imageURL;
+
+    const image = document.createElement("img");
+
+    image.src = imageURL;
+
+    image.alt = avatar.name;
+
+    preview.appendChild(image);
+
+
+    document.getElementById("savedAvatarName").textContent =
+      avatar.name;
+
+    document.getElementById("savedAvatarDescription").textContent =
+      avatar.description || "No description provided.";
+
+    document.getElementById("savedAvatarStyle").textContent =
+      avatar.style;
+
+    document.getElementById("savedAvatarVoice").textContent =
+      avatar.voice;
+
+
+    document.getElementById("backToAvatarStudio").addEventListener(
+      "click",
+      () => openStudio("avatar")
+    );
+
+
+    workspace.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+
+  }
+
+  catch (error) {
+
+    console.error("Unable to open avatar:", error);
+
+    showNotification("Unable to open this avatar.");
+
+  }
+
+}
+
+
+/* =====================================
+   11. DELETE SAVED AVATAR
+===================================== */
+
+async function removeSavedAvatar(id) {
+
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this avatar?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+
+    await deleteAvatarRecord(id);
+
+    showNotification("Avatar deleted.");
+
+    await renderAvatarLibrary();
+
+  }
+
+  catch (error) {
+
+    console.error("Avatar deletion error:", error);
+
+    showNotification("Unable to delete this avatar.");
+
+  }
+
+}
+
+
+/* =====================================
+   12. STUDIO WORKSPACE
+===================================== */
+
+function openStudio(type) {
+
+  const workspace = document.getElementById("workspace");
+
+  if (!workspace) return;
+
+  clearAvatarPreview();
+
+  selectedAvatarFile = null;
+
+
+  if (type === "avatar") {
+
+    openAvatarStudio(workspace);
+
+  }
+
 
   else if (type === "video") {
 
@@ -225,6 +834,7 @@ function openStudio(type) {
         id="videoScript"
         placeholder="Write what your AI avatar should say..."
         rows="6"
+        maxlength="10000"
       ></textarea>
 
       <label for="videoLanguage">
@@ -255,20 +865,11 @@ function openStudio(type) {
 
     `;
 
-    const prepareButton = document.getElementById("prepareVideoBtn");
-
-    if (prepareButton) {
-
-      prepareButton.addEventListener("click", prepareVideo);
-
-    }
+    document.getElementById("prepareVideoBtn")
+      .addEventListener("click", prepareVideo);
 
   }
 
-
-  /* ---------------------------------
-     VOICE STUDIO
-  --------------------------------- */
 
   else if (type === "voice") {
 
@@ -319,7 +920,7 @@ function openStudio(type) {
 
 
 /* =====================================
-   5. PREPARE VIDEO SCRIPT
+   13. PREPARE VIDEO SCRIPT
 ===================================== */
 
 function prepareVideo() {
@@ -376,31 +977,10 @@ function prepareVideo() {
 
 
 /* =====================================
-   6. SAFE HTML TEXT ESCAPING
+   14. NOTIFICATIONS
 ===================================== */
 
-function escapeHTML(value) {
-
-  return String(value).replace(/[&<>"']/g, character => ({
-
-    "&": "&amp;",
-
-    "<": "&lt;",
-
-    ">": "&gt;",
-
-    '"': "&quot;",
-
-    "'": "&#039;"
-
-  })[character]);
-
-}
-
-
-/* =====================================
-   7. PROGRESS NOTIFICATION
-===================================== */
+let notificationTimeout = null;
 
 function showNotification(message) {
 
@@ -412,11 +992,19 @@ function showNotification(message) {
 
   notification.classList.add("show");
 
+  clearTimeout(notificationTimeout);
+
+  notificationTimeout = setTimeout(() => {
+
+    notification.classList.remove("show");
+
+  }, 3500);
+
 }
 
 
 /* =====================================
-   8. PROGRESSIVE WEB APP
+   15. PROGRESSIVE WEB APP
 ===================================== */
 
 if ("serviceWorker" in navigator) {
@@ -443,10 +1031,9 @@ if ("serviceWorker" in navigator) {
 
 
 /* =====================================
-   9. APPLICATION INITIALIZATION
+   16. APPLICATION INITIALIZATION
 ===================================== */
 
 console.log("KMT AI Studios application engine loaded.");
 
 console.log("Founder: Njabulo Mbhodziya Dlamini");
-
