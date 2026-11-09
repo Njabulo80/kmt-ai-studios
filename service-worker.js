@@ -5,7 +5,7 @@
    Offline Application Engine
 ===================================== */
 
-const CACHE_NAME = "kmt-ai-studios-v2";
+const CACHE_NAME = "kmt-ai-studios-v4";
 
 const APP_FILES = [
   "./",
@@ -209,4 +209,4 @@ self.addEventListener("fetch", event => {
 ===================================== */
 
 console.log("KMT AI Studios service worker active.");
-
+console.log("Active cache version:", CACHE_NAME);
