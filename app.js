@@ -16,6 +16,7 @@ const STORE_NAME = "avatars";
 
 let database = null;
 let currentAvatarURL = null;
+let currentVideoAvatarURL = null;
 let editingAvatarId = null;
 
 
@@ -54,8 +55,16 @@ function openAvatarDatabase() {
     };
 
     request.onsuccess = event => {
+
       database = event.target.result;
+
+      database.onversionchange = () => {
+        database.close();
+        database = null;
+      };
+
       resolve(database);
+
     };
 
     request.onerror = () => {
@@ -283,6 +292,10 @@ function displayAvatarPreview(file) {
   image.src = currentAvatarURL;
   image.alt = "Avatar photograph preview";
 
+  image.style.maxWidth = "100%";
+  image.style.width = "180px";
+  image.style.borderRadius = "12px";
+
   const filename = document.createElement("p");
 
   filename.textContent = file.name;
@@ -300,95 +313,154 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
   if (!("speechSynthesis" in window) ||
       !("SpeechSynthesisUtterance" in window)) {
+
     statusElement.textContent =
       "Voice preview is not supported by this browser.";
+
     return;
+
   }
 
   const message = String(text || "").trim();
 
   if (!message) {
-    statusElement.textContent = "Please enter some text to preview.";
+
+    statusElement.textContent =
+      "Please enter some text to preview.";
+
     return;
+
   }
 
   const synth = window.speechSynthesis;
+
   synth.cancel();
 
-  statusElement.textContent = "Preparing voice preview...";
+  statusElement.textContent =
+    "Preparing voice preview...";
 
   const speak = () => {
+
     const speech = new SpeechSynthesisUtterance(message);
+
     const voices = synth.getVoices();
+
     const englishVoices = voices.filter(voice =>
-      voice.lang && voice.lang.toLowerCase().startsWith("en")
+      voice.lang &&
+      voice.lang.toLowerCase().startsWith("en")
     );
 
     const style = String(voiceStyle || "").toLowerCase();
+
     let selectedVoice = null;
 
     if (style.includes("male")) {
+
       selectedVoice = englishVoices.find(voice =>
         /male|david|mark|daniel|james|guy/i.test(voice.name)
       ) || englishVoices[0];
+
     } else if (style.includes("female")) {
+
       selectedVoice = englishVoices.find(voice =>
         /female|zira|samantha|victoria|karen|susan/i.test(voice.name)
       ) || englishVoices[0];
+
     } else {
+
       selectedVoice = englishVoices[0] || voices[0] || null;
+
     }
 
     if (selectedVoice) {
+
       speech.voice = selectedVoice;
       speech.lang = selectedVoice.lang;
+
     } else {
+
       speech.lang = "en-US";
+
     }
 
     speech.rate = style.includes("energetic") ? 1.12 : 0.92;
+
     speech.pitch = style.includes("female") ? 1.08 : 0.95;
 
     speech.onstart = () => {
-      statusElement.textContent = "Playing voice preview...";
+
+      statusElement.textContent =
+        "Playing voice preview...";
+
     };
 
     speech.onend = () => {
-      statusElement.textContent = "Voice preview completed.";
+
+      statusElement.textContent =
+        "Voice preview completed.";
+
     };
 
     speech.onerror = event => {
+
       statusElement.textContent =
-        "Voice preview failed (" + event.error + "). Please try again.";
+        "Voice preview failed (" +
+        event.error +
+        "). Please try again.";
+
     };
 
     synth.speak(speech);
+
   };
 
-  // Some mobile browsers load their voice list asynchronously.
   const availableVoices = synth.getVoices();
 
   if (availableVoices.length) {
+
     speak();
+
   } else {
+
     let finished = false;
 
     const onVoicesChanged = () => {
+
       if (finished) return;
+
       finished = true;
-      synth.removeEventListener("voiceschanged", onVoicesChanged);
+
+      synth.removeEventListener(
+        "voiceschanged",
+        onVoicesChanged
+      );
+
       speak();
+
     };
 
-    synth.addEventListener("voiceschanged", onVoicesChanged);
+    synth.addEventListener(
+      "voiceschanged",
+      onVoicesChanged
+    );
 
     window.setTimeout(() => {
+
       if (finished) return;
+
       finished = true;
-      synth.removeEventListener("voiceschanged", onVoicesChanged);
+
+      synth.removeEventListener(
+        "voiceschanged",
+        onVoicesChanged
+      );
+
       speak();
+
     }, 1000);
+
   }
+
 }
 
 
@@ -411,6 +483,10 @@ function openStudio(type) {
     block: "center"
   });
 
+
+  /* =====================================
+     AVATAR STUDIO
+  ===================================== */
 
   if (type === "avatar") {
 
@@ -465,25 +541,11 @@ function openStudio(type) {
 
         <select id="avatarPresentation">
 
-          <option value="Professional">
-            Professional
-          </option>
-
-          <option value="Casual">
-            Casual
-          </option>
-
-          <option value="Educational">
-            Educational
-          </option>
-
-          <option value="Energetic">
-            Energetic
-          </option>
-
-          <option value="Corporate">
-            Corporate
-          </option>
+          <option value="Professional">Professional</option>
+          <option value="Casual">Casual</option>
+          <option value="Educational">Educational</option>
+          <option value="Energetic">Energetic</option>
+          <option value="Corporate">Corporate</option>
 
         </select>
 
@@ -523,7 +585,7 @@ function openStudio(type) {
         <button
           type="button"
           id="previewAvatarVoiceBtn"
-          style="display:block; width:100%; margin:12px 0; padding:14px; background:#d6ad55; color:#080808; border:0; border-radius:8px; font-weight:700; cursor:pointer;"
+          style="display:block;width:100%;margin:12px 0;padding:14px;background:#d6ad55;color:#080808;border:0;border-radius:8px;font-weight:700;cursor:pointer;"
         >
           PREVIEW SELECTED VOICE
         </button>
@@ -535,7 +597,7 @@ function openStudio(type) {
         <button
           type="submit"
           id="saveAvatarBtn"
-          style="display:block !important; visibility:visible !important; opacity:1 !important; width:100%; margin:18px 0; padding:16px; background:#d6ad55; color:#080808; border:2px solid #d6ad55; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;"
+          style="display:block !important;visibility:visible !important;opacity:1 !important;width:100%;margin:18px 0;padding:16px;background:#d6ad55;color:#080808;border:2px solid #d6ad55;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;"
         >
           SAVE AVATAR
         </button>
@@ -583,6 +645,7 @@ function openStudio(type) {
         );
 
         upload.value = "";
+
         return;
 
       }
@@ -594,6 +657,7 @@ function openStudio(type) {
         );
 
         upload.value = "";
+
         return;
 
       }
@@ -614,9 +678,9 @@ function openStudio(type) {
 
       });
 
-    const form = document.getElementById("avatarForm");
-
-    form.addEventListener("submit", saveAvatar);
+    document
+      .getElementById("avatarForm")
+      .addEventListener("submit", saveAvatar);
 
     loadAvatarLibrary();
 
@@ -629,13 +693,40 @@ function openStudio(type) {
 
   else if (type === "video") {
 
+    if (currentVideoAvatarURL) {
+
+      URL.revokeObjectURL(currentVideoAvatarURL);
+
+      currentVideoAvatarURL = null;
+
+    }
+
     workspace.innerHTML = `
 
       <h3>KMT VIDEO STUDIO</h3>
 
       <p>
-        Prepare the script for your AI-generated video.
+        Bring your saved avatar, script and voice together.
       </p>
+
+      <label for="videoAvatar">
+        Select your saved avatar
+      </label>
+
+      <select id="videoAvatar">
+
+        <option value="">
+          Loading your avatars...
+        </option>
+
+      </select>
+
+      <div
+        id="videoAvatarPreview"
+        style="margin:20px 0;text-align:center;"
+      >
+        Your selected avatar will appear here.
+      </div>
 
       <label for="videoScript">
         Your video script
@@ -643,37 +734,61 @@ function openStudio(type) {
 
       <textarea
         id="videoScript"
-        placeholder="Write what your AI avatar should say..."
-        rows="6"
+        placeholder="Write what you want your avatar to say..."
+        rows="7"
+        maxlength="10000"
       ></textarea>
 
-      <label for="videoLanguage">
-        Select language
+      <label for="videoVoice">
+        Select narration voice
       </label>
 
-      <select id="videoLanguage">
+      <select id="videoVoice">
 
-        <option>English</option>
-        <option>isiZulu</option>
-        <option>siSwati</option>
-        <option>Portuguese</option>
-        <option>French</option>
+        <option value="Natural male voice">
+          Original Male Voice
+        </option>
+
+        <option value="Natural female voice">
+          Natural Female Voice
+        </option>
+
+        <option value="Professional narration">
+          Professional Narration
+        </option>
+
+        <option value="Energetic presentation">
+          Energetic Presentation
+        </option>
 
       </select>
 
-      <button type="button" id="prepareVideoBtn">
-        Prepare video
+      <button
+        type="button"
+        id="previewVideoBtn"
+        style="display:block;width:100%;margin:20px 0;padding:16px;background:#d6ad55;color:#080808;border:0;border-radius:10px;font-weight:700;cursor:pointer;"
+      >
+        PREVIEW MY VIDEO SCRIPT
       </button>
 
       <p id="videoStatus" class="status">
-        Your creative workspace is ready.
+        Select an avatar and write your script.
+      </p>
+
+      <p class="status">
+        Your saved photograph and selected voice
+        will be used for this preview. Actual
+        talking-avatar video generation requires
+        a connected AI video service.
       </p>
 
     `;
 
+    loadVideoAvatarOptions();
+
     document
-      .getElementById("prepareVideoBtn")
-      .addEventListener("click", prepareVideo);
+      .getElementById("previewVideoBtn")
+      .addEventListener("click", previewKMTVideo);
 
   }
 
@@ -698,14 +813,27 @@ function openStudio(type) {
 
       <select id="voiceType">
 
-        <option value="Natural male voice">Original Male Voice</option>
-        <option value="Natural female voice">Natural Female Voice</option>
-        <option value="Professional narration">Professional Narration</option>
-        <option value="Energetic presentation">Energetic Presentation</option>
+        <option value="Natural male voice">
+          Original Male Voice
+        </option>
+
+        <option value="Natural female voice">
+          Natural Female Voice
+        </option>
+
+        <option value="Professional narration">
+          Professional Narration
+        </option>
+
+        <option value="Energetic presentation">
+          Energetic Presentation
+        </option>
 
       </select>
 
-      <label for="voiceSample">Your preview script</label>
+      <label for="voiceSample">
+        Your preview script
+      </label>
 
       <textarea
         id="voiceSample"
@@ -716,12 +844,14 @@ function openStudio(type) {
       <button
         type="button"
         id="previewVoiceBtn"
-        style="display:block; width:100%; margin:15px 0; padding:15px; background:#d6ad55; color:#080808; border:0; border-radius:8px; font-weight:700; cursor:pointer;"
+        style="display:block;width:100%;margin:15px 0;padding:15px;background:#d6ad55;color:#080808;border:0;border-radius:8px;font-weight:700;cursor:pointer;"
       >
         PREVIEW VOICE
       </button>
 
-      <p id="voicePreviewStatus" class="status">Your voice studio is ready.</p>
+      <p id="voicePreviewStatus" class="status">
+        Your voice studio is ready.
+      </p>
 
       <p class="status">
         Voice previews use voices available on your device.
@@ -733,11 +863,13 @@ function openStudio(type) {
     document
       .getElementById("previewVoiceBtn")
       .addEventListener("click", () => {
+
         previewKMTVoice(
           document.getElementById("voiceSample").value,
           document.getElementById("voiceType").value,
           document.getElementById("voicePreviewStatus")
         );
+
       });
 
   } else {
@@ -777,6 +909,7 @@ async function saveAvatar(event) {
   if (!name) {
 
     status.textContent = "Please enter an avatar name.";
+
     return;
 
   }
@@ -797,6 +930,12 @@ async function saveAvatar(event) {
           avatar => avatar.id === editingAvatarId
         )
       : null;
+
+    if (editingAvatarId && !existing) {
+
+      throw new Error("The avatar being edited could not be found.");
+
+    }
 
     const avatar = {
 
@@ -822,7 +961,8 @@ async function saveAvatar(event) {
 
     await saveAvatarToDatabase(avatar);
 
-    status.textContent = "Your avatar profile has been saved.";
+    status.textContent =
+      "Your avatar profile has been saved.";
 
     showNotification("Avatar saved successfully!");
 
@@ -834,6 +974,9 @@ async function saveAvatar(event) {
 
     document.getElementById("avatarPreview").replaceChildren();
 
+    document.getElementById("saveAvatarBtn").textContent =
+      "SAVE AVATAR";
+
     await loadAvatarLibrary();
 
   }
@@ -843,7 +986,8 @@ async function saveAvatar(event) {
     console.error(error);
 
     status.textContent =
-      "Could not save your avatar: " + (error.message || "Please refresh the page and try again.");
+      "Could not save your avatar: " +
+      (error.message || "Please refresh and try again.");
 
   }
 
@@ -870,7 +1014,8 @@ async function loadAvatarLibrary() {
 
       const empty = document.createElement("p");
 
-      empty.textContent = "You haven't saved any avatars yet.";
+      empty.textContent =
+        "You haven't saved any avatars yet.";
 
       container.appendChild(empty);
 
@@ -904,6 +1049,10 @@ async function loadAvatarLibrary() {
           URL.revokeObjectURL(imageURL);
         }, { once: true });
 
+        image.addEventListener("error", () => {
+          URL.revokeObjectURL(imageURL);
+        }, { once: true });
+
       }
 
       const heading = document.createElement("h4");
@@ -917,12 +1066,14 @@ async function loadAvatarLibrary() {
 
       const description = document.createElement("p");
 
-      description.textContent = avatar.description || "No description provided.";
+      description.textContent =
+        avatar.description || "No description provided.";
 
       const editButton = document.createElement("button");
 
       editButton.type = "button";
       editButton.textContent = "Edit";
+
       editButton.addEventListener("click", () => {
         editAvatar(avatar.id);
       });
@@ -976,11 +1127,18 @@ async function editAvatar(id) {
 
     const avatar = avatars.find(item => item.id === id);
 
-    if (!avatar) return;
+    if (!avatar) {
+
+      showNotification("Avatar not found.");
+
+      return;
+
+    }
 
     editingAvatarId = avatar.id;
 
-    document.getElementById("avatarName").value = avatar.name;
+    document.getElementById("avatarName").value =
+      avatar.name;
 
     document.getElementById("avatarDescription").value =
       avatar.description || "";
@@ -988,7 +1146,8 @@ async function editAvatar(id) {
     document.getElementById("avatarPresentation").value =
       avatar.presentation;
 
-    document.getElementById("avatarVoice").value = avatar.voice;
+    document.getElementById("avatarVoice").value =
+      avatar.voice;
 
     clearAvatarPreview();
 
@@ -1005,15 +1164,20 @@ async function editAvatar(id) {
       image.src = currentAvatarURL;
       image.alt = "Saved avatar photograph";
 
+      image.style.width = "180px";
+      image.style.maxWidth = "100%";
+      image.style.borderRadius = "12px";
+
       preview.appendChild(image);
 
     }
 
     document.getElementById("avatarStatus").textContent =
-      "Editing " + avatar.name + ". Select a new photograph only if you want to replace the existing one.";
+      "Editing " + avatar.name +
+      ". Select a new photograph only if you want to replace the existing one.";
 
     document.getElementById("saveAvatarBtn").textContent =
-      "Update avatar";
+      "UPDATE AVATAR";
 
     document.getElementById("avatarForm").scrollIntoView({
       behavior: "smooth",
@@ -1062,6 +1226,193 @@ async function deleteAvatar(id) {
     showNotification("Unable to delete this avatar.");
 
   }
+
+}
+
+
+/* =========================================
+   12B. VIDEO AVATAR SELECTION
+========================================= */
+
+async function loadVideoAvatarOptions() {
+
+  const selector = document.getElementById("videoAvatar");
+
+  const preview = document.getElementById("videoAvatarPreview");
+
+  if (!selector || !preview) return;
+
+  try {
+
+    const avatars = await getAllAvatars();
+
+    selector.replaceChildren();
+
+    if (avatars.length === 0) {
+
+      const option = document.createElement("option");
+
+      option.value = "";
+      option.textContent = "No saved avatars found";
+
+      selector.appendChild(option);
+
+      preview.textContent =
+        "Please create and save an avatar first.";
+
+      return;
+
+    }
+
+    const defaultOption = document.createElement("option");
+
+    defaultOption.value = "";
+    defaultOption.textContent = "Choose your saved avatar";
+
+    selector.appendChild(defaultOption);
+
+    avatars.forEach(avatar => {
+
+      const option = document.createElement("option");
+
+      option.value = String(avatar.id);
+      option.textContent = avatar.name;
+
+      selector.appendChild(option);
+
+    });
+
+    selector.addEventListener("change", () => {
+
+      const selectedAvatar = avatars.find(
+        avatar => String(avatar.id) === selector.value
+      );
+
+      if (!selectedAvatar) return;
+
+      if (currentVideoAvatarURL) {
+
+        URL.revokeObjectURL(currentVideoAvatarURL);
+
+        currentVideoAvatarURL = null;
+
+      }
+
+      preview.replaceChildren();
+
+      if (selectedAvatar.image) {
+
+        currentVideoAvatarURL = URL.createObjectURL(
+          selectedAvatar.image
+        );
+
+        const image = document.createElement("img");
+
+        image.src = currentVideoAvatarURL;
+        image.alt = selectedAvatar.name;
+
+        image.style.width = "180px";
+        image.style.maxWidth = "100%";
+        image.style.borderRadius = "12px";
+        image.style.border = "2px solid #d6ad55";
+
+        preview.appendChild(image);
+
+      }
+
+      const heading = document.createElement("h4");
+
+      heading.textContent =
+        "Selected avatar: " + selectedAvatar.name;
+
+      preview.appendChild(heading);
+
+      const voiceSelector =
+        document.getElementById("videoVoice");
+
+      if (voiceSelector) {
+
+        const matchingVoice = Array.from(
+          voiceSelector.options
+        ).find(option =>
+          option.value === selectedAvatar.voice
+        );
+
+        if (matchingVoice) {
+          voiceSelector.value = selectedAvatar.voice;
+        }
+
+      }
+
+    });
+
+  }
+
+  catch (error) {
+
+    console.error("Video avatar loading error:", error);
+
+    preview.textContent =
+      "Unable to load your saved avatars.";
+
+  }
+
+}
+
+
+/* =========================================
+   12C. KMT VIDEO PREVIEW
+========================================= */
+
+function previewKMTVideo() {
+
+  const avatar = document.getElementById("videoAvatar");
+
+  const script = document.getElementById("videoScript");
+
+  const voice = document.getElementById("videoVoice");
+
+  const status = document.getElementById("videoStatus");
+
+  if (!avatar || !script || !voice || !status) return;
+
+  if (!avatar.value) {
+
+    status.textContent =
+      "Please select a saved avatar first.";
+
+    return;
+
+  }
+
+  const content = script.value.trim();
+
+  if (content.length < 10) {
+
+    status.textContent =
+      "Please enter a script containing at least 10 characters.";
+
+    return;
+
+  }
+
+  if (content.length > 10000) {
+
+    status.textContent =
+      "Your script must not exceed 10,000 characters.";
+
+    return;
+
+  }
+
+  status.textContent =
+    "Preparing your avatar narration...";
+
+  previewKMTVoice(
+    content,
+    voice.value,
+    status
+  );
 
 }
 
