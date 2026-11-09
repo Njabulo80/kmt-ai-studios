@@ -72,7 +72,11 @@ function openAvatarDatabase() {
    3. DATABASE OPERATIONS
 ========================================= */
 
-function saveAvatarToDatabase(avatar) {
+async function saveAvatarToDatabase(avatar) {
+
+  if (!database) {
+    await openAvatarDatabase();
+  }
 
   return new Promise((resolve, reject) => {
 
@@ -87,9 +91,27 @@ function saveAvatarToDatabase(avatar) {
       ? store.put(avatar)
       : store.add(avatar);
 
-    request.onsuccess = () => resolve(request.result);
+    let savedId;
 
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      savedId = request.result;
+    };
+
+    request.onerror = () => {
+      reject(request.error);
+    };
+
+    transaction.oncomplete = () => {
+      resolve(savedId);
+    };
+
+    transaction.onerror = () => {
+      reject(transaction.error || new Error("Avatar save failed."));
+    };
+
+    transaction.onabort = () => {
+      reject(transaction.error || new Error("Avatar save was cancelled."));
+    };
 
   });
 
@@ -382,8 +404,12 @@ function openStudio(type) {
 
         </select>
 
-        <button type="submit" id="saveAvatarBtn">
-          Save avatar
+        <button
+          type="submit"
+          id="saveAvatarBtn"
+          style="display:block !important; visibility:visible !important; opacity:1 !important; width:100%; margin:18px 0; padding:16px; background:#d6ad55; color:#080808; border:2px solid #d6ad55; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;"
+        >
+          SAVE AVATAR
         </button>
 
         <p class="status" id="avatarStatus">
@@ -653,7 +679,7 @@ async function saveAvatar(event) {
     console.error(error);
 
     status.textContent =
-      "Could not save your avatar. Check your browser storage.";
+      "Could not save your avatar: " + (error.message || "Please refresh the page and try again.");
 
   }
 
