@@ -1,4 +1,3 @@
-
 /* =========================================
    KMT AI STUDIOS
    APPLICATION ENGINE
@@ -118,7 +117,11 @@ async function saveAvatarToDatabase(avatar) {
 }
 
 
-function getAllAvatars() {
+async function getAllAvatars() {
+
+  if (!database) {
+    await openAvatarDatabase();
+  }
 
   return new Promise((resolve, reject) => {
 
@@ -140,7 +143,11 @@ function getAllAvatars() {
 }
 
 
-function deleteAvatarFromDatabase(id) {
+async function deleteAvatarFromDatabase(id) {
+
+  if (!database) {
+    await openAvatarDatabase();
+  }
 
   return new Promise((resolve, reject) => {
 
@@ -286,6 +293,106 @@ function displayAvatarPreview(file) {
 
 
 /* =========================================
+   7B. KMT VOICE PREVIEW ENGINE
+========================================= */
+
+function previewKMTVoice(text, voiceStyle, statusElement) {
+
+  if (!("speechSynthesis" in window) ||
+      !("SpeechSynthesisUtterance" in window)) {
+    statusElement.textContent =
+      "Voice preview is not supported by this browser.";
+    return;
+  }
+
+  const message = String(text || "").trim();
+
+  if (!message) {
+    statusElement.textContent = "Please enter some text to preview.";
+    return;
+  }
+
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
+  statusElement.textContent = "Preparing voice preview...";
+
+  const speak = () => {
+    const speech = new SpeechSynthesisUtterance(message);
+    const voices = synth.getVoices();
+    const englishVoices = voices.filter(voice =>
+      voice.lang && voice.lang.toLowerCase().startsWith("en")
+    );
+
+    const style = String(voiceStyle || "").toLowerCase();
+    let selectedVoice = null;
+
+    if (style.includes("male")) {
+      selectedVoice = englishVoices.find(voice =>
+        /male|david|mark|daniel|james|guy/i.test(voice.name)
+      ) || englishVoices[0];
+    } else if (style.includes("female")) {
+      selectedVoice = englishVoices.find(voice =>
+        /female|zira|samantha|victoria|karen|susan/i.test(voice.name)
+      ) || englishVoices[0];
+    } else {
+      selectedVoice = englishVoices[0] || voices[0] || null;
+    }
+
+    if (selectedVoice) {
+      speech.voice = selectedVoice;
+      speech.lang = selectedVoice.lang;
+    } else {
+      speech.lang = "en-US";
+    }
+
+    speech.rate = style.includes("energetic") ? 1.12 : 0.92;
+    speech.pitch = style.includes("female") ? 1.08 : 0.95;
+
+    speech.onstart = () => {
+      statusElement.textContent = "Playing voice preview...";
+    };
+
+    speech.onend = () => {
+      statusElement.textContent = "Voice preview completed.";
+    };
+
+    speech.onerror = event => {
+      statusElement.textContent =
+        "Voice preview failed (" + event.error + "). Please try again.";
+    };
+
+    synth.speak(speech);
+  };
+
+  // Some mobile browsers load their voice list asynchronously.
+  const availableVoices = synth.getVoices();
+
+  if (availableVoices.length) {
+    speak();
+  } else {
+    let finished = false;
+
+    const onVoicesChanged = () => {
+      if (finished) return;
+      finished = true;
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
+      speak();
+    };
+
+    synth.addEventListener("voiceschanged", onVoicesChanged);
+
+    window.setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
+      speak();
+    }, 1000);
+  }
+}
+
+
+/* =========================================
    8. AVATAR CREATION WORKSPACE
 ========================================= */
 
@@ -404,6 +511,27 @@ function openStudio(type) {
 
         </select>
 
+        <label for="avatarVoiceSample">
+          Voice preview text
+        </label>
+
+        <textarea
+          id="avatarVoiceSample"
+          rows="3"
+        >Welcome to KMT AI Studios. Your ideas deserve a powerful voice.</textarea>
+
+        <button
+          type="button"
+          id="previewAvatarVoiceBtn"
+          style="display:block; width:100%; margin:12px 0; padding:14px; background:#d6ad55; color:#080808; border:0; border-radius:8px; font-weight:700; cursor:pointer;"
+        >
+          PREVIEW SELECTED VOICE
+        </button>
+
+        <p id="avatarVoicePreviewStatus" class="status">
+          Select a voice and tap Preview Voice to listen.
+        </p>
+
         <button
           type="submit"
           id="saveAvatarBtn"
@@ -433,7 +561,6 @@ function openStudio(type) {
       </div>
 
     `;
-
 
     const upload = document.getElementById("avatarUpload");
 
@@ -475,6 +602,17 @@ function openStudio(type) {
 
     });
 
+    document
+      .getElementById("previewAvatarVoiceBtn")
+      .addEventListener("click", () => {
+
+        previewKMTVoice(
+          document.getElementById("avatarVoiceSample").value,
+          document.getElementById("avatarVoice").value,
+          document.getElementById("avatarVoicePreviewStatus")
+        );
+
+      });
 
     const form = document.getElementById("avatarForm");
 
@@ -551,7 +689,7 @@ function openStudio(type) {
       <h3>KMT VOICE STUDIO</h3>
 
       <p>
-        Explore the voice selection workspace.
+        Select a voice style and listen to a preview.
       </p>
 
       <label for="voiceType">
@@ -560,23 +698,49 @@ function openStudio(type) {
 
       <select id="voiceType">
 
-        <option>Natural male voice</option>
-        <option>Natural female voice</option>
-        <option>Professional narration</option>
-        <option>Energetic presentation</option>
+        <option value="Natural male voice">Original Male Voice</option>
+        <option value="Natural female voice">Natural Female Voice</option>
+        <option value="Professional narration">Professional Narration</option>
+        <option value="Energetic presentation">Energetic Presentation</option>
 
       </select>
 
+      <label for="voiceSample">Your preview script</label>
+
+      <textarea
+        id="voiceSample"
+        rows="5"
+        placeholder="Type what you want the voice to say..."
+      >Welcome to KMT AI Studios. We turn imagination into creation.</textarea>
+
+      <button
+        type="button"
+        id="previewVoiceBtn"
+        style="display:block; width:100%; margin:15px 0; padding:15px; background:#d6ad55; color:#080808; border:0; border-radius:8px; font-weight:700; cursor:pointer;"
+      >
+        PREVIEW VOICE
+      </button>
+
+      <p id="voicePreviewStatus" class="status">Your voice studio is ready.</p>
+
       <p class="status">
-        Voice preferences can be selected here.
-        Real AI speech generation will require a connected voice engine.
+        Voice previews use voices available on your device.
+        Premium AI voice generation requires a connected voice service.
       </p>
 
     `;
 
-  }
+    document
+      .getElementById("previewVoiceBtn")
+      .addEventListener("click", () => {
+        previewKMTVoice(
+          document.getElementById("voiceSample").value,
+          document.getElementById("voiceType").value,
+          document.getElementById("voicePreviewStatus")
+        );
+      });
 
-  else {
+  } else {
 
     workspace.textContent = "Studio section not found.";
 
