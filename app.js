@@ -1,6 +1,8 @@
+
 /* =========================================
    KMT AI STUDIOS
    APPLICATION ENGINE
+   FREE-FIRST CREATION MODE
    Founder: Njabulo Mbhodziya Dlamini
 ========================================= */
 
@@ -18,6 +20,9 @@ let database = null;
 let currentAvatarURL = null;
 let currentVideoAvatarURL = null;
 let editingAvatarId = null;
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_SCRIPT_LENGTH = 10000;
 
 
 /* =========================================
@@ -68,7 +73,7 @@ function openAvatarDatabase() {
     };
 
     request.onerror = () => {
-      reject(request.error);
+      reject(request.error || new Error("Database connection failed."));
     };
 
   });
@@ -99,14 +104,10 @@ async function saveAvatarToDatabase(avatar) {
       ? store.put(avatar)
       : store.add(avatar);
 
-    let savedId;
+    let savedId = null;
 
     request.onsuccess = () => {
       savedId = request.result;
-    };
-
-    request.onerror = () => {
-      reject(request.error);
     };
 
     transaction.oncomplete = () => {
@@ -143,9 +144,13 @@ async function getAllAvatars() {
       .objectStore(STORE_NAME)
       .getAll();
 
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      resolve(request.result || []);
+    };
 
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      reject(request.error || new Error("Could not load avatars."));
+    };
 
   });
 
@@ -165,13 +170,17 @@ async function deleteAvatarFromDatabase(id) {
       "readwrite"
     );
 
-    const request = transaction
-      .objectStore(STORE_NAME)
-      .delete(Number(id));
+    transaction.objectStore(STORE_NAME).delete(Number(id));
 
-    request.onsuccess = () => resolve();
+    transaction.oncomplete = () => resolve();
 
-    request.onerror = () => reject(request.error);
+    transaction.onerror = () => {
+      reject(transaction.error || new Error("Avatar deletion failed."));
+    };
+
+    transaction.onabort = () => {
+      reject(transaction.error || new Error("Avatar deletion was cancelled."));
+    };
 
   });
 
@@ -265,11 +274,18 @@ if (yearElement) {
 function clearAvatarPreview() {
 
   if (currentAvatarURL) {
-
     URL.revokeObjectURL(currentAvatarURL);
-
     currentAvatarURL = null;
+  }
 
+}
+
+
+function clearVideoAvatarPreview() {
+
+  if (currentVideoAvatarURL) {
+    URL.revokeObjectURL(currentVideoAvatarURL);
+    currentVideoAvatarURL = null;
   }
 
 }
@@ -314,8 +330,10 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
   if (!("speechSynthesis" in window) ||
       !("SpeechSynthesisUtterance" in window)) {
 
-    statusElement.textContent =
-      "Voice preview is not supported by this browser.";
+    if (statusElement) {
+      statusElement.textContent =
+        "Voice preview is not supported by this browser.";
+    }
 
     return;
 
@@ -325,8 +343,10 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
   if (!message) {
 
-    statusElement.textContent =
-      "Please enter some text to preview.";
+    if (statusElement) {
+      statusElement.textContent =
+        "Please enter some text to preview.";
+    }
 
     return;
 
@@ -336,8 +356,9 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
   synth.cancel();
 
-  statusElement.textContent =
-    "Preparing voice preview...";
+  if (statusElement) {
+    statusElement.textContent = "Preparing voice preview...";
+  }
 
   const speak = () => {
 
@@ -389,24 +410,26 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
     speech.onstart = () => {
 
-      statusElement.textContent =
-        "Playing voice preview...";
+      if (statusElement) {
+        statusElement.textContent = "Playing voice preview...";
+      }
 
     };
 
     speech.onend = () => {
 
-      statusElement.textContent =
-        "Voice preview completed.";
+      if (statusElement) {
+        statusElement.textContent = "Voice preview completed.";
+      }
 
     };
 
     speech.onerror = event => {
 
-      statusElement.textContent =
-        "Voice preview failed (" +
-        event.error +
-        "). Please try again.";
+      if (statusElement) {
+        statusElement.textContent =
+          "Voice preview failed (" + event.error + "). Please try again.";
+      }
 
     };
 
@@ -430,19 +453,13 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
       finished = true;
 
-      synth.removeEventListener(
-        "voiceschanged",
-        onVoicesChanged
-      );
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
 
       speak();
 
     };
 
-    synth.addEventListener(
-      "voiceschanged",
-      onVoicesChanged
-    );
+    synth.addEventListener("voiceschanged", onVoicesChanged);
 
     window.setTimeout(() => {
 
@@ -450,10 +467,7 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
       finished = true;
 
-      synth.removeEventListener(
-        "voiceschanged",
-        onVoicesChanged
-      );
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
 
       speak();
 
@@ -465,7 +479,7 @@ function previewKMTVoice(text, voiceStyle, statusElement) {
 
 
 /* =========================================
-   8. AVATAR CREATION WORKSPACE
+   8. STUDIO WORKSPACES
 ========================================= */
 
 function openStudio(type) {
@@ -475,6 +489,8 @@ function openStudio(type) {
   if (!workspace) return;
 
   clearAvatarPreview();
+
+  clearVideoAvatarPreview();
 
   editingAvatarId = null;
 
@@ -492,17 +508,19 @@ function openStudio(type) {
 
     workspace.innerHTML = `
 
-      <h3>CREATE YOUR AI AVATAR</h3>
+      <h3>CREATE YOUR AVATAR</h3>
 
       <p>
         Build your digital identity inside KMT Studios.
       </p>
 
+      <p style="color:#d6ad55;font-weight:700;">
+        FREE AVATAR CREATION
+      </p>
+
       <form id="avatarForm" class="avatar-form">
 
-        <label for="avatarName">
-          Avatar name
-        </label>
+        <label for="avatarName">Avatar name</label>
 
         <input
           id="avatarName"
@@ -512,9 +530,7 @@ function openStudio(type) {
           required
         >
 
-        <label for="avatarDescription">
-          Description
-        </label>
+        <label for="avatarDescription">Description</label>
 
         <textarea
           id="avatarDescription"
@@ -523,9 +539,7 @@ function openStudio(type) {
           placeholder="Describe your digital identity..."
         ></textarea>
 
-        <label for="avatarUpload">
-          Upload photograph
-        </label>
+        <label for="avatarUpload">Upload photograph</label>
 
         <input
           id="avatarUpload"
@@ -535,9 +549,7 @@ function openStudio(type) {
 
         <div id="avatarPreview"></div>
 
-        <label for="avatarPresentation">
-          Presentation style
-        </label>
+        <label for="avatarPresentation">Presentation style</label>
 
         <select id="avatarPresentation">
 
@@ -549,38 +561,20 @@ function openStudio(type) {
 
         </select>
 
-        <label for="avatarVoice">
-          Preferred voice
-        </label>
+        <label for="avatarVoice">Preferred voice</label>
 
         <select id="avatarVoice">
 
-          <option value="Natural male voice">
-            Natural male voice
-          </option>
-
-          <option value="Natural female voice">
-            Natural female voice
-          </option>
-
-          <option value="Professional narration">
-            Professional narration
-          </option>
-
-          <option value="Energetic presentation">
-            Energetic presentation
-          </option>
+          <option value="Natural male voice">Natural male voice</option>
+          <option value="Natural female voice">Natural female voice</option>
+          <option value="Professional narration">Professional narration</option>
+          <option value="Energetic presentation">Energetic presentation</option>
 
         </select>
 
-        <label for="avatarVoiceSample">
-          Voice preview text
-        </label>
+        <label for="avatarVoiceSample">Voice preview text</label>
 
-        <textarea
-          id="avatarVoiceSample"
-          rows="3"
-        >Welcome to KMT AI Studios. Your ideas deserve a powerful voice.</textarea>
+        <textarea id="avatarVoiceSample" rows="3">Welcome to KMT AI Studios. Your ideas deserve a powerful voice.</textarea>
 
         <button
           type="button"
@@ -612,9 +606,7 @@ function openStudio(type) {
 
         <h3>MY AVATAR LIBRARY</h3>
 
-        <p>
-          Your saved digital identities will appear here.
-        </p>
+        <p>Your saved digital identities will appear here.</p>
 
         <div id="avatarLibraryList">
           Loading your avatars...
@@ -640,9 +632,7 @@ function openStudio(type) {
 
       if (!allowedTypes.includes(file.type)) {
 
-        showNotification(
-          "Please upload a JPG, PNG or WebP photograph."
-        );
+        showNotification("Please upload a JPG, PNG or WebP photograph.");
 
         upload.value = "";
 
@@ -650,11 +640,9 @@ function openStudio(type) {
 
       }
 
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > MAX_IMAGE_SIZE) {
 
-        showNotification(
-          "Your photograph must be smaller than 10MB."
-        );
+        showNotification("Your photograph must be smaller than 10MB.");
 
         upload.value = "";
 
@@ -688,37 +676,28 @@ function openStudio(type) {
 
 
   /* =====================================
-     VIDEO STUDIO
+     VIDEO STUDIO — FREE MODE
   ===================================== */
 
   else if (type === "video") {
-
-    if (currentVideoAvatarURL) {
-
-      URL.revokeObjectURL(currentVideoAvatarURL);
-
-      currentVideoAvatarURL = null;
-
-    }
 
     workspace.innerHTML = `
 
       <h3>KMT VIDEO STUDIO</h3>
 
       <p>
-        Bring your saved avatar, script and voice together.
+        Create your video project using your own saved
+        avatar, script and device voice.
       </p>
 
-      <label for="videoAvatar">
-        Select your saved avatar
-      </label>
+      <p style="color:#d6ad55;font-weight:700;">
+        KMT FREE CREATION MODE
+      </p>
+
+      <label for="videoAvatar">Select your saved avatar</label>
 
       <select id="videoAvatar">
-
-        <option value="">
-          Loading your avatars...
-        </option>
-
+        <option value="">Loading your avatars...</option>
       </select>
 
       <div
@@ -728,9 +707,7 @@ function openStudio(type) {
         Your selected avatar will appear here.
       </div>
 
-      <label for="videoScript">
-        Your video script
-      </label>
+      <label for="videoScript">Your video script</label>
 
       <textarea
         id="videoScript"
@@ -739,48 +716,65 @@ function openStudio(type) {
         maxlength="10000"
       ></textarea>
 
-      <label for="videoVoice">
-        Select narration voice
-      </label>
+      <label for="videoLanguage">Video language</label>
+
+      <select id="videoLanguage">
+        <option value="English">English</option>
+        <option value="isiZulu">isiZulu</option>
+        <option value="siSwati">siSwati</option>
+        <option value="Portuguese">Portuguese</option>
+        <option value="French">French</option>
+      </select>
+
+      <label for="videoVoice">Select narration voice</label>
 
       <select id="videoVoice">
 
-        <option value="Natural male voice">
-          Original Male Voice
-        </option>
-
-        <option value="Natural female voice">
-          Natural Female Voice
-        </option>
-
-        <option value="Professional narration">
-          Professional Narration
-        </option>
-
-        <option value="Energetic presentation">
-          Energetic Presentation
-        </option>
+        <option value="Natural male voice">Original Male Voice</option>
+        <option value="Natural female voice">Natural Female Voice</option>
+        <option value="Professional narration">Professional Narration</option>
+        <option value="Energetic presentation">Energetic Presentation</option>
 
       </select>
 
       <button
         type="button"
-        id="previewVideoBtn"
+        id="prepareVideoBtn"
         style="display:block;width:100%;margin:20px 0;padding:16px;background:#d6ad55;color:#080808;border:0;border-radius:10px;font-weight:700;cursor:pointer;"
       >
-        PREVIEW MY VIDEO SCRIPT
+        PREPARE FREE VIDEO PROJECT
+      </button>
+
+      <button
+        type="button"
+        id="previewVideoBtn"
+        style="display:block;width:100%;margin:12px 0;padding:16px;background:#171717;color:#d6ad55;border:1px solid #d6ad55;border-radius:10px;font-weight:700;cursor:pointer;"
+      >
+        PREVIEW MY SCRIPT
       </button>
 
       <p id="videoStatus" class="status">
-        Select an avatar and write your script.
+        Select an avatar and start creating.
       </p>
 
-      <p class="status">
-        Your saved photograph and selected voice
-        will be used for this preview. Actual
-        talking-avatar video generation requires
-        a connected AI video service.
-      </p>
+      <div style="padding:15px;border:1px solid #d6ad55;border-radius:10px;margin-top:20px;">
+
+        <h4 style="color:#d6ad55;">YOUR FREE CREATION TOOLS</h4>
+
+        <p>• Save and use your own photographs.</p>
+
+        <p>• Write and prepare video scripts.</p>
+
+        <p>• Preview narration using voices available on your device.</p>
+
+        <p>• No HeyGen payment or API credits are required for these features.</p>
+
+        <p>
+          Note: This workspace does not yet produce a moving,
+          talking-avatar video.
+        </p>
+
+      </div>
 
     `;
 
@@ -789,6 +783,10 @@ function openStudio(type) {
     document
       .getElementById("previewVideoBtn")
       .addEventListener("click", previewKMTVideo);
+
+    document
+      .getElementById("prepareVideoBtn")
+      .addEventListener("click", prepareVideo);
 
   }
 
@@ -803,43 +801,26 @@ function openStudio(type) {
 
       <h3>KMT VOICE STUDIO</h3>
 
-      <p>
-        Select a voice style and listen to a preview.
+      <p>Select a voice style and listen to a preview.</p>
+
+      <p style="color:#d6ad55;font-weight:700;">
+        FREE DEVICE VOICE PREVIEW
       </p>
 
-      <label for="voiceType">
-        Choose a voice style
-      </label>
+      <label for="voiceType">Choose a voice style</label>
 
       <select id="voiceType">
 
-        <option value="Natural male voice">
-          Original Male Voice
-        </option>
-
-        <option value="Natural female voice">
-          Natural Female Voice
-        </option>
-
-        <option value="Professional narration">
-          Professional Narration
-        </option>
-
-        <option value="Energetic presentation">
-          Energetic Presentation
-        </option>
+        <option value="Natural male voice">Original Male Voice</option>
+        <option value="Natural female voice">Natural Female Voice</option>
+        <option value="Professional narration">Professional Narration</option>
+        <option value="Energetic presentation">Energetic Presentation</option>
 
       </select>
 
-      <label for="voiceSample">
-        Your preview script
-      </label>
+      <label for="voiceSample">Your preview script</label>
 
-      <textarea
-        id="voiceSample"
-        rows="5"
-        placeholder="Type what you want the voice to say..."
-      >Welcome to KMT AI Studios. We turn imagination into creation.</textarea>
+      <textarea id="voiceSample" rows="5">Welcome to KMT AI Studios. We turn imagination into creation.</textarea>
 
       <button
         type="button"
@@ -855,7 +836,7 @@ function openStudio(type) {
 
       <p class="status">
         Voice previews use voices available on your device.
-        Premium AI voice generation requires a connected voice service.
+        Premium AI voice generation is not enabled.
       </p>
 
     `;
@@ -872,7 +853,9 @@ function openStudio(type) {
 
       });
 
-  } else {
+  }
+
+  else {
 
     workspace.textContent = "Studio section not found.";
 
@@ -923,11 +906,20 @@ async function saveAvatar(event) {
 
   }
 
+  if (file && file.size > MAX_IMAGE_SIZE) {
+
+    status.textContent =
+      "Your photograph must be smaller than 10MB.";
+
+    return;
+
+  }
+
   try {
 
     const existing = editingAvatarId
       ? (await getAllAvatars()).find(
-          avatar => avatar.id === editingAvatarId
+          avatar => Number(avatar.id) === Number(editingAvatarId)
         )
       : null;
 
@@ -956,13 +948,12 @@ async function saveAvatar(event) {
     };
 
     if (editingAvatarId) {
-      avatar.id = editingAvatarId;
+      avatar.id = Number(editingAvatarId);
     }
 
     await saveAvatarToDatabase(avatar);
 
-    status.textContent =
-      "Your avatar profile has been saved.";
+    status.textContent = "Your avatar profile has been saved.";
 
     showNotification("Avatar saved successfully!");
 
@@ -974,8 +965,7 @@ async function saveAvatar(event) {
 
     document.getElementById("avatarPreview").replaceChildren();
 
-    document.getElementById("saveAvatarBtn").textContent =
-      "SAVE AVATAR";
+    document.getElementById("saveAvatarBtn").textContent = "SAVE AVATAR";
 
     await loadAvatarLibrary();
 
@@ -1014,8 +1004,7 @@ async function loadAvatarLibrary() {
 
       const empty = document.createElement("p");
 
-      empty.textContent =
-        "You haven't saved any avatars yet.";
+      empty.textContent = "You haven't saved any avatars yet.";
 
       container.appendChild(empty);
 
@@ -1107,8 +1096,7 @@ async function loadAvatarLibrary() {
 
     console.error(error);
 
-    container.textContent =
-      "Unable to load your avatar library.";
+    container.textContent = "Unable to load your avatar library.";
 
   }
 
@@ -1125,7 +1113,9 @@ async function editAvatar(id) {
 
     const avatars = await getAllAvatars();
 
-    const avatar = avatars.find(item => item.id === id);
+    const avatar = avatars.find(
+      item => Number(item.id) === Number(id)
+    );
 
     if (!avatar) {
 
@@ -1135,10 +1125,9 @@ async function editAvatar(id) {
 
     }
 
-    editingAvatarId = avatar.id;
+    editingAvatarId = Number(avatar.id);
 
-    document.getElementById("avatarName").value =
-      avatar.name;
+    document.getElementById("avatarName").value = avatar.name;
 
     document.getElementById("avatarDescription").value =
       avatar.description || "";
@@ -1285,18 +1274,20 @@ async function loadVideoAvatarOptions() {
     selector.addEventListener("change", () => {
 
       const selectedAvatar = avatars.find(
-        avatar => String(avatar.id) === selector.value
+        avatar => Number(avatar.id) === Number(selector.value)
       );
 
-      if (!selectedAvatar) return;
+      if (!selectedAvatar) {
 
-      if (currentVideoAvatarURL) {
+        clearVideoAvatarPreview();
 
-        URL.revokeObjectURL(currentVideoAvatarURL);
+        preview.textContent = "Choose an avatar to preview.";
 
-        currentVideoAvatarURL = null;
+        return;
 
       }
+
+      clearVideoAvatarPreview();
 
       preview.replaceChildren();
 
@@ -1322,21 +1313,17 @@ async function loadVideoAvatarOptions() {
 
       const heading = document.createElement("h4");
 
-      heading.textContent =
-        "Selected avatar: " + selectedAvatar.name;
+      heading.textContent = "Selected avatar: " + selectedAvatar.name;
 
       preview.appendChild(heading);
 
-      const voiceSelector =
-        document.getElementById("videoVoice");
+      const voiceSelector = document.getElementById("videoVoice");
 
       if (voiceSelector) {
 
         const matchingVoice = Array.from(
           voiceSelector.options
-        ).find(option =>
-          option.value === selectedAvatar.voice
-        );
+        ).find(option => option.value === selectedAvatar.voice);
 
         if (matchingVoice) {
           voiceSelector.value = selectedAvatar.voice;
@@ -1352,8 +1339,7 @@ async function loadVideoAvatarOptions() {
 
     console.error("Video avatar loading error:", error);
 
-    preview.textContent =
-      "Unable to load your saved avatars.";
+    preview.textContent = "Unable to load your saved avatars.";
 
   }
 
@@ -1378,8 +1364,7 @@ function previewKMTVideo() {
 
   if (!avatar.value) {
 
-    status.textContent =
-      "Please select a saved avatar first.";
+    status.textContent = "Please select a saved avatar first.";
 
     return;
 
@@ -1396,7 +1381,7 @@ function previewKMTVideo() {
 
   }
 
-  if (content.length > 10000) {
+  if (content.length > MAX_SCRIPT_LENGTH) {
 
     status.textContent =
       "Your script must not exceed 10,000 characters.";
@@ -1404,9 +1389,6 @@ function previewKMTVideo() {
     return;
 
   }
-
-  status.textContent =
-    "Preparing your avatar narration...";
 
   previewKMTVoice(
     content,
@@ -1418,10 +1400,12 @@ function previewKMTVideo() {
 
 
 /* =========================================
-   13. PREPARE VIDEO SCRIPT
+   13. PREPARE FREE VIDEO PROJECT
 ========================================= */
 
 function prepareVideo() {
+
+  const avatar = document.getElementById("videoAvatar");
 
   const script = document.getElementById("videoScript");
 
@@ -1429,41 +1413,99 @@ function prepareVideo() {
 
   const status = document.getElementById("videoStatus");
 
-  if (!script || !language || !status) return;
+  if (!avatar || !script || !language || !status) return;
 
-  const content = script.value.trim();
-
-  if (!content) {
+  if (!avatar.value) {
 
     status.textContent =
-      "Please enter your video script first.";
+      "Please select one of your saved avatars first.";
 
     return;
 
   }
+
+  const content = script.value.trim();
 
   if (content.length < 10) {
 
     status.textContent =
-      "Your script is too short. Please add more content.";
+      "Your script must contain at least 10 characters.";
 
     return;
 
   }
 
-  if (content.length > 10000) {
+  if (content.length > MAX_SCRIPT_LENGTH) {
 
     status.textContent =
-      "Your script must be below 10,000 characters.";
+      "Your script must not exceed 10,000 characters.";
 
     return;
 
   }
 
-  status.textContent =
-    "Script prepared successfully. Language: " +
-    language.value +
-    ". An AI video engine must be connected to generate the actual video.";
+  const project = {
+
+    studio: "KMT AI Studios",
+
+    projectType: "Free Video Project",
+
+    avatarId: Number(avatar.value),
+
+    script: content,
+
+    language: language.value,
+
+    voice: document.getElementById("videoVoice").value,
+
+    createdAt: new Date().toISOString(),
+
+    generationStatus: "Prepared - awaiting animation engine"
+
+  };
+
+  try {
+
+    const projectData = JSON.stringify(project, null, 2);
+
+    const file = new Blob(
+      [projectData],
+      { type: "application/json" }
+    );
+
+    const downloadURL = URL.createObjectURL(file);
+
+    const link = document.createElement("a");
+
+    link.href = downloadURL;
+
+    link.download = "KMT-Video-Project.json";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(downloadURL);
+
+    status.textContent =
+      "Your KMT video project has been prepared. " +
+      "Your project details have been downloaded. " +
+      "You can now preview your narration.";
+
+    showNotification("KMT video project prepared successfully!");
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Unable to prepare your project. Please try again.";
+
+  }
 
 }
 
@@ -1531,3 +1573,7 @@ if ("serviceWorker" in navigator) {
 console.log("KMT AI Studios application engine loaded.");
 
 console.log("Founder: Njabulo Mbhodziya Dlamini");
+
+console.log("KMT free-first creation mode active.");
+
+console.log("No HeyGen generation requests are made by this application.");
